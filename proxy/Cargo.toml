@@ -1,0 +1,26 @@
+[package]
+name = "mumble-web-proxy"
+version = "0.1.1"
+authors = ["Jonas Herzig <me@johni0702.de>"]
+edition = "2024"
+rust-version = "1.89"
+
+[dependencies]
+argparse = "0.2.2"
+bytes.workspace = true
+byteorder.workspace = true
+futures = { workspace = true, features = ["compat", "io-compat"] }
+toml = "0.5"
+serde = { version = "1.0", features = ["derive"] }
+tokio.workspace = true
+tokio-util = { workspace = true, features = ["codec"] }
+tokio-native-tls.workspace = true
+native-tls.workspace = true
+mumble-protocol = { workspace = true, features = ["webrtc-extensions"] }
+tokio-tungstenite = { version = "0.28", features = ["native-tls"] }
+http.workspace = true
+tungstenite = "0.28"
+rtp = { workspace = true, features = ["rfc5764-openssl"] }
+libnice.workspace = true
+webrtc-sdp.workspace = true
+openssl.workspace = true

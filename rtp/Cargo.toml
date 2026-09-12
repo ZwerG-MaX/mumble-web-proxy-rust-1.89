@@ -1,0 +1,27 @@
+[package]
+name = "rtp"
+version = "0.1.0"
+authors = ["Takeru Ohta <phjgt308@gmail.com>"]
+edition = "2024"
+rust-version = "1.89"
+
+[features]
+default = []
+rfc5764-openssl = ["openssl", "tokio-openssl", "tokio-util/compat"]
+
+[dependencies]
+aes-ctr = "0.6.0"
+async-trait = "0.1"
+fixedbitset = "0.5"
+futures = "0.3"
+handy_async = "0.2"
+hmac = "0.12"
+num-bigint = "0.4"
+num-integer = "0.1"
+sha-1 = "0.10"
+trackable = "0.1"
+
+openssl = { version = "0.10", optional = true }
+tokio-openssl = { version = "0.6", optional = true }
+tokio-util = { workspace = true, optional = true, features = ["compat"] }
+

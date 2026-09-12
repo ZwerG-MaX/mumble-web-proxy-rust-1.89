@@ -1,0 +1,31 @@
+[package]
+name = "mumble-protocol"
+version = "0.4.1"
+authors = ["Jonas Herzig <me@johni0702.de>"]
+edition = "2024"
+rust-version = "1.89"
+description = "Rust implementation of the Mumble protocol"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/johni0702/rust-mumble-protocol"
+
+[features]
+default = ["openssl"]
+webrtc-extensions = []
+
+[build-dependencies]
+protobuf-codegen-pure = "2.28"
+
+[dependencies]
+bytes.workspace = true
+byteorder.workspace = true
+tokio-util = { workspace = true, features = ["codec"] }
+protobuf = "2.28"
+openssl = { workspace = true, optional = true }
+
+[dev-dependencies]
+argparse = "0.2"
+futures.workspace = true
+native-tls = "0.2"
+tokio.workspace = true
+tokio-util = { workspace = true, features = ["codec", "net"] }
+tokio-native-tls = "0.3"
