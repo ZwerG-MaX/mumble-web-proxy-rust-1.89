@@ -202,16 +202,17 @@ impl Connection {
         agent.set_controlling_mode(true);
 
         // Setup ICE stream
-        let mut stream = match {
+        let stream_result = {
             let mut builder = agent.stream_builder(1);
             if self.config.ice_min_port != 1 || self.config.ice_max_port != u16::MAX {
                 builder.set_port_range(self.config.ice_min_port, self.config.ice_max_port);
             }
             builder.build()
-        } {
+        };
+        let mut stream = match stream_result {
             Ok(stream) => stream,
             Err(err) => {
-                return Err(io::Error::new(io::ErrorKind::Other, err).into());
+                return Err(io::Error::other(err).into());
             }
         };
         let component = stream.take_components().pop().expect("one component");
@@ -255,7 +256,7 @@ impl Connection {
         pin_mut!(stream);
         match stream.poll_next(cx) {
             Poll::Ready(Some(mut candidate)) => {
-                println!("Local ice candidate: {}", candidate.to_string());
+                println!("Local ice candidate: {}", candidate);
 
                 // Map to public addresses (if configured)
                 let config = &self.config;
@@ -275,7 +276,7 @@ impl Connection {
 
                 // Got a new candidate, send it to the client
                 let mut msg = msgs::IceCandidate::new();
-                msg.set_content(format!("candidate:{}", candidate.to_string()));
+                msg.set_content(format!("candidate:{}", candidate));
                 let frame = Frame::Client(msg.into());
                 self.outbound_buf.push_back(frame);
                 true
@@ -352,7 +353,7 @@ impl Connection {
         // NOTE: we rely on the srtp layer to prevent two-time-pads and by doing so,
         // allow for (reasonable) jitter of incoming voice packets.
 
-        let user = match self.sessions.get_mut(&(session_id as u32)) {
+        let user = match self.sessions.get_mut(&session_id) {
             Some(s) => s,
             None => return Ok(()),
         };
@@ -422,7 +423,7 @@ impl Connection {
                 marker: first_in_transmission,
                 payload_type: 97,
                 seq_num: rtp_seq_num as u16,
-                timestamp: rtp_time as u32,
+                timestamp: rtp_time,
                 ssrc: rtp_ssrc,
                 csrc_list: Vec::new(),
                 extension: None,
@@ -494,16 +495,15 @@ impl Connection {
             }
             ControlPacket::WebRTC(mut message) => {
                 println!("Got WebRTC: {:?}", message);
-                if let Some((_, stream)) = &mut self.ice {
-                    if let (Ok(ufrag), Ok(pwd)) = (
+                if let Some((_, stream)) = &mut self.ice
+                    && let (Ok(ufrag), Ok(pwd)) = (
                         CString::new(message.take_ice_ufrag()),
                         CString::new(message.take_ice_pwd()),
                     ) {
                         stream.set_remote_credentials(ufrag, pwd);
                     }
-                    // FIXME trigger ICE-restart if required
-                    // FIXME store and use remote dtls fingerprint
-                }
+                // FIXME trigger ICE-restart if required
+                // FIXME store and use remote dtls fingerprint
             }
             ControlPacket::IceCandidate(mut message) => {
                 let candidate = message.take_content();
@@ -515,8 +515,7 @@ impl Connection {
                         }
                         Ok(_) => unreachable!(),
                         Err(err) => {
-                            return Err(io::Error::new(
-                                io::ErrorKind::Other,
+                            return Err(io::Error::other(
                                 format!("Error parsing ICE candidate: {}", err),
                             )
                             .into());
@@ -586,15 +585,14 @@ impl Future for Connection {
             // anyway), hence this being positioned above the code for incoming packets below.
             // (same applies to the other futures directly below it)
             for session in self.sessions.values_mut() {
-                if let Some(timeout) = &mut session.timeout {
-                    if let Poll::Ready(()) = timeout.poll_unpin(cx) {
+                if let Some(timeout) = &mut session.timeout
+                    && let Poll::Ready(()) = timeout.poll_unpin(cx) {
                         if let Some(frame) = session.set_inactive() {
                             self.outbound_buf.push_back(frame);
                         }
                         continue 'poll;
                     }
                 }
-            }
 
             // Poll ice stream for new candidates
             if self.as_mut().gather_ice_candidates(cx) {

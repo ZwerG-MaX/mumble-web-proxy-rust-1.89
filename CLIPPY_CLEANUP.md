@@ -26,3 +26,9 @@ cargo clippy --workspace --all-targets -- -D warnings
 ```
 
 - protocol/build.rs: removed two needless borrows in protobuf_codegen inputs/includes.
+
+- rtp/src/rfc3550/rtcp.rs: removed two redundant struct field names.
+- rtp/src/rfc5764/mod.rs: collapsed nested if and used is_pending() for poll_write().
+
+- libnice/src/ffi.rs: fixed io-other-error and unnecessary-cast Clippy lints.
+- libnice/src/ice.rs: collapsed nested ifs, used mem::take, and removed redundant to_string() in println!.

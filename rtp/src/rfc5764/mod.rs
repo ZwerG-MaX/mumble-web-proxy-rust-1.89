@@ -391,11 +391,11 @@ where
     }
 
     fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<io::Result<()>> {
-        if let Some(buf) = self.sink_buf.take() {
-            if let Poll::Pending = Pin::new(&mut self.stream).poll_write(cx, &buf) {
-                self.sink_buf = Some(buf);
-                return Poll::Pending;
-            }
+        if let Some(buf) = self.sink_buf.take()
+            && Pin::new(&mut self.stream).poll_write(cx, &buf).is_pending()
+        {
+            self.sink_buf = Some(buf);
+            return Poll::Pending;
         }
         Pin::new(&mut self.stream).poll_flush(cx)
     }

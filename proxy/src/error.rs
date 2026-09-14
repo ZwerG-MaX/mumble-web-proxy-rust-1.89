@@ -34,10 +34,10 @@ impl std::error::Error for Error {
 
 impl Error {
     pub fn is_connection_closed(&self) -> bool {
-        match self {
-            Error::ClientConnection(tungstenite::Error::ConnectionClosed) => true,
-            _ => false,
-        }
+        matches!(
+            self,
+            Error::ClientConnection(tungstenite::Error::ConnectionClosed)
+        )
     }
 }
 

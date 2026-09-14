@@ -69,7 +69,7 @@ pub struct RtcpCompoundPacket<T> {
 }
 impl<T> RtcpCompoundPacket<T> {
     pub fn new(packets: Vec<T>) -> Self {
-        RtcpCompoundPacket { packets: packets }
+        RtcpCompoundPacket { packets }
     }
 }
 impl<T: Packet> Packet for RtcpCompoundPacket<T> {}
@@ -437,7 +437,7 @@ impl ReadFrom for RtcpSourceDescription {
                 .map(|_| SdesChunk::read_from(reader))
                 .collect()
         );
-        Ok(RtcpSourceDescription { chunks: chunks })
+        Ok(RtcpSourceDescription { chunks })
     }
 }
 impl WriteTo for RtcpSourceDescription {

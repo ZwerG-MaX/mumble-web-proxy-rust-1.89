@@ -5,7 +5,7 @@ use argparse::StoreOption;
 use argparse::StoreTrue;
 use argparse::{ArgumentParser, Store};
 use byteorder::{BigEndian, ByteOrder};
-use bytes::{BufMut, Bytes, BytesMut};
+use bytes::{BufMut, BytesMut};
 use futures::{future, SinkExt, StreamExt, TryFutureExt, TryStreamExt};
 use http::HeaderValue;
 use mumble_protocol::control::ClientControlCodec;
@@ -111,7 +111,7 @@ fn create_argparser(config: &mut Config) -> ArgumentParser<'_> {
 
 fn error_missing_arg(arg: &str) {
     let args: Vec<String> = std::env::args().collect();
-    let name = if args.len() > 0 {
+    let name = if !args.is_empty() {
         &args[0][..]
     } else {
         "unknown"
@@ -142,7 +142,7 @@ async fn main() -> Result<(), Error> {
     if config.ws_port == 0 {
         error_missing_arg("listen-ws");
     }
-    if config.upstream == "" {
+    if config.upstream.is_empty() {
         error_missing_arg("server");
     }
 
@@ -215,6 +215,7 @@ async fn main() -> Result<(), Error> {
             .max_message_size(Some(0x7f_ffff))
             .max_frame_size(Some(0x7f_ffff))
             .accept_unmasked_frames(false);
+        #[allow(clippy::result_large_err)]
         fn header_callback(
             _req: &Request,
             mut response: Response,
@@ -247,7 +248,7 @@ async fn main() -> Result<(), Error> {
                     Message::Binary(b) if b.len() >= 6 => {
                         let id = BigEndian::read_u16(&b);
                         // b[2..6] is length which is implicit in websocket msgs
-                        let bytes = Bytes::from(b).slice(6..);
+                        let bytes = b.slice(6..);
                         RawControlPacket { id, bytes }.try_into().ok()
                     }
                     _ => None,

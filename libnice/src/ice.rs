@@ -77,10 +77,10 @@ impl Agent {
             .on_new_candidate(move |candidate| {
                 let mut candidate_sinks = candidate_sinks_clone.lock().unwrap();
                 let stream_id = &candidate.stream_id();
-                if let Some(sink) = candidate_sinks.get_mut(stream_id) {
-                    if sink.unbounded_send(candidate.to_sdp()).is_err() {
-                        candidate_sinks.remove(stream_id);
-                    }
+                if let Some(sink) = candidate_sinks.get_mut(stream_id)
+                    && sink.unbounded_send(candidate.to_sdp()).is_err()
+                {
+                    candidate_sinks.remove(stream_id);
                 }
             })
             .unwrap();
@@ -100,10 +100,10 @@ impl Agent {
             .on_component_state_changed(move |stream_id, component_id, new_state| {
                 let mut state_sinks = state_sinks_clone.lock().unwrap();
                 let key = (stream_id, component_id);
-                if let Some(sink) = state_sinks.get_mut(&key) {
-                    if block_on(sink.send(new_state)).is_err() {
-                        state_sinks.remove(&key);
-                    }
+                if let Some(sink) = state_sinks.get_mut(&key)
+                    && block_on(sink.send(new_state)).is_err()
+                {
+                    state_sinks.remove(&key);
                 }
             })
             .unwrap();
@@ -379,7 +379,7 @@ impl Stream {
 
     /// Returns the components of this stream, returning an empty Vec on subsequent calls.
     pub fn take_components(&mut self) -> Vec<StreamComponent> {
-        std::mem::replace(&mut self.components, Vec::new())
+        std::mem::take(&mut self.components)
     }
 
     /// Returns the components of this stream, consuming the stream.
@@ -613,11 +613,11 @@ mod test {
         // Note that the connection might already start working before all have been exchanged
         // but continuing might improve the network path taken and provide fallback options.
         for candidate in executor.block_on(server_stream.by_ref().collect::<Vec<Candidate>>()) {
-            println!("Server candidate: {}", candidate.to_string());
+            println!("Server candidate: {}", candidate);
             client_stream.add_remote_candidate(candidate);
         }
         for candidate in executor.block_on(client_stream.by_ref().collect::<Vec<Candidate>>()) {
-            println!("Client candidate: {}", candidate.to_string());
+            println!("Client candidate: {}", candidate);
             server_stream.add_remote_candidate(candidate);
         }
 

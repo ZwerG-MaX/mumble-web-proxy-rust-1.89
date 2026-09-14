@@ -409,8 +409,7 @@ impl NiceCandidate {
         raw.set_transport(match sdp.transport {
             SdpAttributeCandidateTransport::Udp => NiceCandidateTransport::Udp,
             SdpAttributeCandidateTransport::Tcp => match sdp.tcp_type.as_ref().ok_or_else(|| {
-                io::Error::new(
-                    io::ErrorKind::Other,
+                io::Error::other(
                     "transport is tcp but tcp_type is not set",
                 )
             })? {
@@ -423,8 +422,7 @@ impl NiceCandidate {
             match sdp.address {
                 Address::Ip(ip) => ip,
                 Address::Fqdn(_) => {
-                    return Err(io::Error::new(
-                        io::ErrorKind::Other,
+                    return Err(io::Error::other(
                         "FQDN are not supported by from_sdp_without_fqdn",
                     ))
                 }
@@ -526,7 +524,7 @@ impl NiceCandidate {
                 .to_owned()
                 .into_string()
                 .expect("foundation is ascii"),
-            component: self.component_id() as u32,
+            component: self.component_id(),
             transport: match self.transport() {
                 NiceCandidateTransport::Udp => SdpAttributeCandidateTransport::Udp,
                 _ => SdpAttributeCandidateTransport::Tcp,
